@@ -1,0 +1,21 @@
+---
+  - hosts: localhost
+    connection: local
+    gather_facts: False
+
+    tasks:
+      
+      - name: Provision and Launch the new EC2 Instance
+        ec2:
+          keypair: sharayah-dev-key
+          instance_type: t2.micro
+          image: ami-97785bed
+          region: us-east-1
+          vpc_subnet_id: subnet-255c7f0a
+          assign_public_ip: yes
+          group_id: sg-2153f857
+          wait: true
+          count: 1
+          instance_tags:
+            Name: LAMP Webserver
+        register: ec2
