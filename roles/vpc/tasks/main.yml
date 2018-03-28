@@ -1,0 +1,107 @@
+---
+# Creation of new VPC
+- name:               Create new VPC
+  ec2_vpc_net:
+    name:             US EAST VPC
+    state:            present
+    cidr_block:       10.0.0.0/16
+    region:           us-east-1
+  register: us_east_vpc
+
+# Set the new VPC id to a variable of vpc_id 
+# which is requires for ec2 vpc subnet setup and others
+- name:               Set VPC ID in variable for subnet setup
+  set_fact:
+    vpc_id:           "{{ us_east_vpc.vpc.id }}"
+
+
+# Create single public subnet
+- name:               Create Public Subnet
+  ec2_vpc_subnet:
+    wait:             true
+    state:            present
+    vpc_id:           "{{ vpc_id }}"
+    cidr:             10.0.0.0/24
+    region:           us-east-1
+    resource_tags:
+      Name:           Public Subnet
+  register: my_public_subnet
+
+
+# Set the new public subnet id to a variable
+# For later use in route table setup
+- name:               Set Public Subnet ID in variable
+  set_fact:
+    public_subnet_id: "{{ my_public_subnet.subnet.id }}"
+
+
+# Creation of one VPC Internet Gateway 
+- name:               Create Internet Gateway for VPC
+  ec2_vpc_igw:
+    state:            present
+    vpc_id:           "{{ vpc_id }}"
+    region:           us-east-1
+    tags:
+      Name:           US EAST IGW
+  register: my_vpc_igw
+
+
+# We save the id of the Internet Gateway in a new variable
+# for route table setup 
+- name:               Set Internet Gateway ID in variable
+  set_fact:
+    igw_id:           "{{ my_vpc_igw.gateway_id }}"
+
+
+# Set up a Route Table
+- name:               Set up public subnet route table
+  ec2_vpc_route_table:
+    vpc_id:           "{{ vpc_id }}"
+    region:           us-east-1
+    tags:
+      Name:           Public RT
+    subnets:
+      - "{{ public_subnet_id }}"
+    routes:
+      - dest:         0.0.0.0/0
+        gateway_id:   "{{ igw_id }}"
+
+# Create custom NACL for added security (instead of using default)
+- name:               Setup new NACL for VPC
+  ec2_vpc_nacl:
+    vpc_id:           "{{ vpc_id }}"
+    region:           us-east-1
+    name:             US EAST NACL
+    state:            present
+    subnets:
+      - "{{ public_subnet_id }}"
+    ingress: [
+      # Rule num, proto, allow/deny, cidr, icmp_code, icmp_type, port from, port to
+      [100, 'tcp', 'allow', '0.0.0.0/0', null, null, 22, 22],
+      [110, 'tcp', 'allow', '0.0.0.0/0', null, null, 80, 80],
+      [120, 'tcp', 'allow', '0.0.0.0/0', null, null, 443, 443],
+      [130, 'tcp', 'allow', '0.0.0.0/0', null, null, 32768, 65535],
+    ]
+    egress: [
+      [100, 'tcp', 'allow', '0.0.0.0/0', null, null, 80, 80],
+      [110, 'tcp', 'allow', '0.0.0.0/0', null, null, 443, 443],
+      [120, 'tcp', 'allow', '0.0.0.0/0', null, null, 32768, 65535],
+    ]
+
+# Create Main Security Group.
+- name:               Create Main Security Group
+  ec2_group:
+    name:             US EAST SG
+    tags:
+      Name:           US EAST Pub SG
+    description:      Public Security Group for US East VPC
+    vpc_id:           "{{ vpc_id }}"
+    region:           us-east-1
+    rules:
+      - proto:        tcp
+        ports:
+          - 80
+          - 443
+          - 22
+        cidr_ip:      0.0.0.0/0
+        rule_desc:    Allow all on ports specified
