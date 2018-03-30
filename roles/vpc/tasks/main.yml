@@ -1,4 +1,5 @@
 ---
+# Still need to prevent extra NACL and sg  
 # Creation of new VPC
 - name:               Create new VPC
   ec2_vpc_net:

@@ -1,17 +1,13 @@
 ---
-- name: Include vars from vpc main yml
-  include_vars:
-    dir: roles/vpc/tasks
-
 - name: Provision and Launch the new EC2 Instance
   ec2:
-    keypair: sharayah-dev-key
-    instance_type: t2.micro
-    image: ami-97785bed
-    region: us-east-1
-    vpc_subnet_id: "{{ public_subnet_id }}"
+    keypair: "{{ ec2_keypair }}"
+    instance_type: "{{ instance_type }}"
+    image: "{{ image }}"
+    region: "{{ region }}"
+    vpc_subnet_id: "{{ vpc_subnet_id }}"
     assign_public_ip: yes
-    group_id: "{{ security_group_id }}"
+    group_id: "{{ group_id }}"
     wait: true
     count: 1
     instance_tags:

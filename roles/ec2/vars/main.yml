@@ -1,0 +1,7 @@
+ec2_keypair: "sharayah-dev-key"
+instance_type: "t2.micro"
+image: "ami-97785bed"
+region: "us-east-1"
+vpc_subnet_id: "subnet-75b3ab11"
+group_id: "sg-bca3aeca"
+count: "1"
