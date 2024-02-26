@@ -1,9 +1,0 @@
----
-vpc_cidr_block: "10.0.0.0/16"
-vpc_name: "US EAST VPC"
-vpc_region: "us-east-1"
-
-# default to a /24 block
-subnet_cidr: "10.0.0.0/24"
-subnet_name: "Public Subnet"
-sg_public:   "US EAST SG"
